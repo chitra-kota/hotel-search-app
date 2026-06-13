@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>StayFinder — Hotel Search</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+<style>
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: #f4f6f9;
+  color: #1a1d23;
+  min-height: 100vh;
+}
+
+/* ── Navbar ── */
+.navbar {
+  position: sticky; top: 0; z-index: 100;
+  background: #fff;
+  border-bottom: 1px solid #e8eaed;
+  padding: 0 32px;
+  height: 60px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-family: 'Playfair Display', serif;
+  font-size: 22px;
+  color: #1a1d23;
+  letter-spacing: -0.3px;
+  display: flex; align-items: center; gap: 8px;
+}
+.nav-logo-dot { width: 8px; height: 8px; background: #2563eb; border-radius: 50%; }
+.nav-links { display: flex; gap: 28px; align-items: center; }
+.nav-links a {
+  font-size: 13px; color: #6b7280; text-decoration: none;
+  font-weight: 400; transition: color .15s;
+}
+.nav-links a:hover { color: #1a1d23; }
+.nav-cta {
+  background: #2563eb; color: #fff !important;
+  padding: 7px 16px; border-radius: 8px;
+  font-weight: 500 !important; font-size: 13px !important;
+  transition: background .15s !important;
+}
+.nav-cta:hover { background: #1d4ed8 !important; color: #fff !important; }
+
+/* ── Hero ── */
+.hero {
+  background: #fff;
+  padding: 56px 32px 48px;
+  text-align: center;
+  border-bottom: 1px solid #e8eaed;
+}
+.hero-tag {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: #eff6ff; color: #2563eb;
+  font-size: 11px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase;
+  padding: 5px 12px; border-radius: 999px;
+  margin-bottom: 20px;
+}
+.hero-tag::before { content: ''; width: 6px; height: 6px; background: #2563eb; border-radius: 50%; }
+.hero h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 48px; font-weight: 600;
+  color: #0f1117; line-height: 1.15;
+  letter-spacing: -1px; margin-bottom: 14px;
+}
+.hero h1 em { font-style: italic; color: #2563eb; }
+.hero p {
+  font-size: 16px; color: #6b7280; font-weight: 300;
+  max-width: 460px; margin: 0 auto 36px; line-height: 1.6;
+}
+
+/* ── Search Box ── */
+.search-wrap {
+  max-width: 620px; margin: 0 auto;
+}
+.search-box {
+  display: flex; align-items: center;
+  background: #fff;
+  border: 1.5px solid #d1d5db;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0,0,0,.07);
+  transition: border-color .2s, box-shadow .2s;
+}
+.search-box:focus-within {
+  border-color: #2563eb;
+  box-shadow: 0 4px 24px rgba(37,99,235,.15);
+}
+.search-icon {
+  padding: 0 14px 0 18px;
+  color: #9ca3af; font-size: 18px; flex-shrink: 0;
+}
+.search-input {
+  flex: 1; border: none; outline: none;
+  padding: 16px 8px; font-size: 15px;
+  font-family: 'Inter', sans-serif;
+  color: #1a1d23; background: transparent;
+}
+.search-input::placeholder { color: #9ca3af; }
+.search-btn {
+  margin: 6px; padding: 11px 24px;
+  background: #2563eb; color: #fff;
+  border: none; border-radius: 10px;
+  font-size: 14px; font-weight: 500;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer; display: flex; align-items: center; gap: 8px;
+  transition: background .15s, transform .1s;
+  white-space: nowrap; flex-shrink: 0;
+}
+.search-btn:hover { background: #1d4ed8; }
+.search-btn:active { transform: scale(.97); }
+.search-btn:disabled { background: #d1d5db; cursor: not-allowed; transform: none; }
+
+/* ── Quick picks ── */
+.quick-picks {
+  display: flex; gap: 8px; flex-wrap: wrap;
+  justify-content: center; margin-top: 16px;
+}
+.quick-pick {
+  padding: 6px 16px;
+  background: #f8fafc; border: 1px solid #e2e8f0;
+  border-radius: 999px; font-size: 12px; font-weight: 400;
+  color: #4b5563; cursor: pointer; font-family: 'Inter', sans-serif;
+  transition: all .15s;
+}
+.quick-pick:hover { background: #eff6ff; border-color: #bfdbfe; color: #2563eb; }
+
+/* ── Main layout ── */
+.main { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+
+/* ── Filters bar ── */
+.filters-bar {
+  display: flex; align-items: center; gap: 10px;
+  flex-wrap: wrap; margin-bottom: 24px;
+}
+.filter-label { font-size: 12px; color: #6b7280; font-weight: 500; margin-right: 4px; }
+.filter-chip {
+  padding: 6px 14px; border: 1px solid #e2e8f0;
+  border-radius: 999px; font-size: 12px; font-weight: 400;
+  color: #4b5563; background: #fff; cursor: pointer;
+  font-family: 'Inter', sans-serif; transition: all .15s;
+}
+.filter-chip:hover { border-color: #2563eb; color: #2563eb; }
+.filter-chip.active { background: #2563eb; color: #fff; border-color: #2563eb; }
+
+/* ── Results header ── */
+.results-meta {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 20px;
+}
+.results-meta h2 { font-size: 18px; font-weight: 600; color: #0f1117; }
+.results-meta span { font-size: 13px; color: #9ca3af; }
+.sort-select {
+  padding: 7px 12px; border: 1px solid #e2e8f0; border-radius: 8px;
+  font-size: 12px; color: #4b5563; background: #fff;
+  font-family: 'Inter', sans-serif; cursor: pointer; outline: none;
+}
+
+/* ── Hotel cards grid ── */
+.hotels-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+/* ── Hotel Card ── */
+.hotel-card {
+  background: #fff; border-radius: 16px;
+  border: 1px solid #e8eaed;
+  overflow: hidden; transition: box-shadow .2s, transform .2s;
+  cursor: pointer;
+}
+.hotel-card:hover {
+  box-shadow: 0 8px 32px rgba(0,0,0,.1);
+  transform: translateY(-2px);
+}
+.hotel-img {
+  width: 100%; height: 180px; object-fit: cover;
+  background: #e8eaed;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 48px; position: relative; overflow: hidden;
+}
+.hotel-img-bg {
+  width: 100%; height: 180px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 52px;
+  position: relative;
+}
+.hotel-badge {
+  position: absolute; top: 12px; left: 12px;
+  background: rgba(255,255,255,.92); backdrop-filter: blur(4px);
+  color: #1a1d23; font-size: 10px; font-weight: 600;
+  padding: 4px 10px; border-radius: 999px;
+  text-transform: uppercase; letter-spacing: .06em;
+}
+.hotel-wishlist {
+  position: absolute; top: 10px; right: 12px;
+  width: 32px; height: 32px; border-radius: 50%;
+  background: rgba(255,255,255,.9); border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; transition: background .15s;
+}
+.hotel-wishlist:hover { background: #fff; }
+.hotel-wishlist.liked { color: #ef4444; }
+
+.hotel-body { padding: 18px 18px 16px; }
+.hotel-top-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 4px; }
+.hotel-name { font-size: 15px; font-weight: 600; color: #0f1117; line-height: 1.3; flex: 1; }
+.hotel-price-block { text-align: right; flex-shrink: 0; }
+.hotel-price { font-size: 18px; font-weight: 600; color: #2563eb; }
+.hotel-price-sub { font-size: 10px; color: #9ca3af; font-weight: 400; }
+
+.hotel-category { font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 10px; }
+
+.hotel-rating-row { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+.stars { color: #f59e0b; font-size: 13px; letter-spacing: 1px; }
+.rating-num { font-size: 13px; font-weight: 600; color: #0f1117; }
+.review-cnt { font-size: 12px; color: #9ca3af; }
+.open-pill {
+  margin-left: auto; font-size: 10px; font-weight: 500; padding: 3px 8px;
+  border-radius: 999px;
+}
+.open-yes { background: #dcfce7; color: #15803d; }
+.open-no  { background: #fee2e2; color: #dc2626; }
+
+.hotel-address {
+  font-size: 12px; color: #6b7280;
+  display: flex; align-items: flex-start; gap: 5px;
+  margin-bottom: 10px; line-height: 1.4;
+}
+.hotel-address svg { flex-shrink: 0; margin-top: 1px; }
+
+.hotel-desc { font-size: 12px; color: #6b7280; line-height: 1.5; margin-bottom: 12px; font-style: italic; }
+
+.amenities { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 14px; }
+.amenity-tag {
+  background: #f4f6f9; border: 1px solid #e8eaed;
+  padding: 3px 9px; border-radius: 999px;
+  font-size: 11px; color: #4b5563; display: flex; align-items: center; gap: 4px;
+}
+
+.hotel-footer {
+  border-top: 1px solid #f0f2f5; padding-top: 14px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.book-btn {
+  background: #2563eb; color: #fff;
+  border: none; border-radius: 8px;
+  padding: 9px 20px; font-size: 13px; font-weight: 500;
+  font-family: 'Inter', sans-serif; cursor: pointer;
+  transition: background .15s;
+}
+.book-btn:hover { background: #1d4ed8; }
+.view-btn {
+  background: transparent; color: #2563eb;
+  border: 1px solid #bfdbfe; border-radius: 8px;
+  padding: 9px 16px; font-size: 13px; font-weight: 400;
+  font-family: 'Inter', sans-serif; cursor: pointer;
+  transition: all .15s;
+}
+.view-btn:hover { background: #eff6ff; }
+
+/* ── States ── */
+.state-box {
+  text-align: center; padding: 80px 24px;
+  grid-column: 1 / -1;
+}
+.state-icon { font-size: 52px; margin-bottom: 16px; }
+.state-title { font-size: 18px; font-weight: 600; color: #0f1117; margin-bottom: 8px; }
+.state-sub { font-size: 14px; color: #6b7280; max-width: 300px; margin: 0 auto; }
+
+.spinner {
+  width: 36px; height: 36px;
+  border: 3px solid #e8eaed;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: spin .65s linear infinite;
+  margin: 0 auto 16px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Skeleton loader ── */
+.skeleton { background: #e8eaed; border-radius: 6px; animation: pulse 1.5s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+.skel-card { background: #fff; border-radius: 16px; border: 1px solid #e8eaed; overflow: hidden; }
+.skel-img { height: 180px; background: #e8eaed; }
+.skel-body { padding: 18px; }
+.skel-line { height: 14px; background: #e8eaed; border-radius: 4px; margin-bottom: 10px; animation: pulse 1.5s ease-in-out infinite; }
+
+/* ── Toast ── */
+.toast {
+  position: fixed; bottom: 28px; right: 28px; z-index: 999;
+  background: #1a1d23; color: #fff;
+  padding: 12px 20px; border-radius: 10px;
+  font-size: 13px; font-weight: 400;
+  box-shadow: 0 8px 24px rgba(0,0,0,.2);
+  opacity: 0; pointer-events: none;
+  transform: translateY(8px);
+  transition: opacity .25s, transform .25s;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+
+/* ── Footer ── */
+.footer {
+  text-align: center; padding: 32px;
+  font-size: 12px; color: #9ca3af;
+  border-top: 1px solid #e8eaed;
+  margin-top: 48px;
+  background: #fff;
+}
+
+/* ── Responsive ── */
+@media(max-width:600px){
+  .navbar{padding:0 16px}
+  .nav-links{display:none}
+  .hero{padding:40px 16px 36px}
+  .hero h1{font-size:32px}
+  .main{padding:20px 14px}
+  .hotels-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar">
+  <div class="nav-logo">
+    <div class="nav-logo-dot"></div>
+    StayFinder
+  </div>
+  <div class="nav-links">
+    <a href="#">Explore</a>
+    <a href="#">Deals</a>
+    <a href="#">About</a>
+    <a href="#" class="nav-cta">Sign in</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-tag">Hotel Search</div>
+  <h1>Find your perfect<br><em>stay anywhere</em></h1>
+  <p>Search hotels in any city. Real details, real amenities, real prices.</p>
+
+  <div class="search-wrap">
+    <div class="search-box">
+      <div class="search-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </div>
+      <input
+        class="search-input"
+        id="search-input"
+        type="text"
+        placeholder="City, town or destination…"
+        onkeydown="if(event.key==='Enter') doSearch()"
+        autocomplete="off"
+      />
+      <button class="search-btn" id="search-btn" onclick="doSearch()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Search
+      </button>
+    </div>
+    <div class="quick-picks">
+      <span style="font-size:12px;color:#9ca3af;align-self:center;margin-right:4px">Popular:</span>
+      <button class="quick-pick" onclick="quickSearch('Hyderabad')">🏙 Hyderabad</button>
+      <button class="quick-pick" onclick="quickSearch('Goa')">🌴 Goa</button>
+      <button class="quick-pick" onclick="quickSearch('Mumbai')">🌆 Mumbai</button>
+      <button class="quick-pick" onclick="quickSearch('Vizag')">🌊 Vizag</button>
+      <button class="quick-pick" onclick="quickSearch('Ooty')">⛰ Ooty</button>
+      <button class="quick-pick" onclick="quickSearch('Jaipur')">🏰 Jaipur</button>
+    </div>
+  </div>
+</section>
+
+<!-- Main -->
+<main class="main" id="main-area" style="display:none">
+
+  <!-- Filters -->
+  <div class="filters-bar" id="filters-bar">
+    <span class="filter-label">Filter:</span>
+    <button class="filter-chip active" onclick="setFilter('all',this)">All</button>
+    <button class="filter-chip" onclick="setFilter('luxury',this)">Luxury</button>
+    <button class="filter-chip" onclick="setFilter('budget',this)">Budget</button>
+    <button class="filter-chip" onclick="setFilter('resort',this)">Resort</button>
+    <button class="filter-chip" onclick="setFilter('boutique',this)">Boutique</button>
+  </div>
+
+  <!-- Results meta -->
+  <div class="results-meta" id="results-meta" style="display:none">
+    <h2 id="results-title">Hotels found</h2>
+    <div style="display:flex;align-items:center;gap:10px">
+      <span id="results-count"></span>
+      <select class="sort-select" onchange="sortResults(this.value)">
+        <option value="default">Sort: Recommended</option>
+        <option value="price_asc">Price: Low to High</option>
+        <option value="price_desc">Price: High to Low</option>
+        <option value="rating">Highest Rated</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Cards grid -->
+  <div class="hotels-grid" id="hotels-grid"></div>
+</main>
+
+<div class="footer">© 2025 StayFinder · Built for hotel discovery</div>
+<div class="toast" id="toast"></div>
+
+<script>
+let allHotels = [];
+let activeFilter = 'all';
+let currentSort = 'default';
+let currentLocation = '';
+let wishlist = new Set();
+
+const amenityEmoji = {
+  'WiFi':'📶','Pool':'🏊','Spa':'💆','Gym':'💪','Restaurant':'🍽','Bar':'🍸',
+  'Parking':'🅿','AC':'❄️','Room Service':'🛎','Airport Shuttle':'🚌',
+  'Pet Friendly':'🐾','Beach Access':'🏖','Conference Room':'📊','Rooftop':'🌇',
+  'Breakfast':'☕','Laundry':'👔'
+};
+
+const hotelEmojiBg = (category) => {
+  if(/luxury|5-star|five/i.test(category)) return { bg:'#fef3c7', em:'🏨' };
+  if(/resort/i.test(category)) return { bg:'#d1fae5', em:'🌴' };
+  if(/boutique/i.test(category)) return { bg:'#ede9fe', em:'🏩' };
+  if(/budget|economy/i.test(category)) return { bg:'#e0f2fe', em:'🏠' };
+  return { bg:'#f0f9ff', em:'🏨' };
+};
+
+async function doSearch() {
+  const q = document.getElementById('search-input').value.trim();
+  if (!q) { showToast('Please enter a location'); return; }
+  runSearch(q);
+}
+
+function quickSearch(place) {
+  document.getElementById('search-input').value = place;
+  runSearch(place);
+}
+
+async function runSearch(location) {
+  currentLocation = location;
+  activeFilter = 'all';
+  currentSort = 'default';
+  document.querySelectorAll('.filter-chip').forEach((c,i)=>c.classList.toggle('active',i===0));
+
+  const btn = document.getElementById('search-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .65s linear infinite"></span> Searching…';
+
+  document.getElementById('main-area').style.display = 'block';
+  document.getElementById('results-meta').style.display = 'none';
+
+  // skeleton
+  const grid = document.getElementById('hotels-grid');
+  grid.innerHTML = Array(6).fill(0).map(()=>`
+    <div class="skel-card">
+      <div class="skel-img"></div>
+      <div class="skel-body">
+        <div class="skel-line" style="width:65%"></div>
+        <div class="skel-line" style="width:40%;height:10px"></div>
+        <div class="skel-line" style="width:80%;height:10px"></div>
+        <div class="skel-line" style="width:55%;height:10px"></div>
+      </div>
+    </div>
+  `).join('');
+
+  document.getElementById('main-area').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        system: `You are a hotel data API. Return ONLY valid JSON — no markdown, no backticks, no explanation.
+Return exactly this structure: { "hotels": [ ... ] }
+Each hotel must have:
+- name (string, realistic hotel name)
+- category (string: one of "5-star luxury", "4-star hotel", "3-star hotel", "budget hotel", "resort", "boutique hotel", "heritage hotel", "business hotel")
+- rating (number 3.0–5.0, one decimal)
+- reviews (integer, 80–4000)
+- price_inr (integer, realistic INR per night: budget=800-2500, mid=2500-6000, luxury=6000-25000, resort=4000-18000)
+- address (string, realistic street/area address in that city)
+- open_now (true or false)
+- amenities (array of 4-7 items from: WiFi, Pool, Spa, Gym, Restaurant, Bar, Parking, AC, Room Service, Airport Shuttle, Pet Friendly, Beach Access, Conference Room, Rooftop, Breakfast, Laundry)
+- description (string, one sentence, specific and authentic to the location)
+Return 8 varied hotels across different categories and price ranges.`,
+        messages: [{ role: 'user', content: 'Hotels in ' + location }]
+      })
+    });
+
+    const data = await resp.json();
+    const raw = data.content?.filter(b => b.type === 'text').map(b => b.text).join('') || '';
+    const clean = raw.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(clean);
+    allHotels = parsed.hotels || [];
+    renderAll();
+
+  } catch (e) {
+    grid.innerHTML = `<div class="state-box" style="grid-column:1/-1">
+      <div class="state-icon">⚠️</div>
+      <div class="state-title">Something went wrong</div>
+      <div class="state-sub">Could not load hotels. Please try again.</div>
+    </div>`;
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Search`;
+  }
+}
+
+function renderAll() {
+  let hotels = [...allHotels];
+
+  // filter
+  if (activeFilter !== 'all') {
+    hotels = hotels.filter(h => h.category.toLowerCase().includes(activeFilter));
+  }
+
+  // sort
+  if (currentSort === 'price_asc') hotels.sort((a,b) => a.price_inr - b.price_inr);
+  else if (currentSort === 'price_desc') hotels.sort((a,b) => b.price_inr - a.price_inr);
+  else if (currentSort === 'rating') hotels.sort((a,b) => b.rating - a.rating);
+
+  const grid = document.getElementById('hotels-grid');
+  const meta = document.getElementById('results-meta');
+
+  if (!hotels.length) {
+    grid.innerHTML = `<div class="state-box">
+      <div class="state-icon">🔍</div>
+      <div class="state-title">No hotels match this filter</div>
+      <div class="state-sub">Try a different filter or search another location.</div>
+    </div>`;
+    meta.style.display = 'none';
+    return;
+  }
+
+  document.getElementById('results-title').textContent = `Hotels in ${currentLocation}`;
+  document.getElementById('results-count').textContent = `${hotels.length} found`;
+  meta.style.display = 'flex';
+
+  grid.innerHTML = hotels.map((h, i) => {
+    const starCount = Math.round(h.rating);
+    const stars = '★'.repeat(starCount) + '☆'.repeat(5 - starCount);
+    const { bg, em } = hotelEmojiBg(h.category);
+    const openHtml = h.open_now
+      ? '<span class="open-pill open-yes">● Open now</span>'
+      : '<span class="open-pill open-no">● Closed</span>';
+    const liked = wishlist.has(i);
+    const amenityHtml = (h.amenities || []).slice(0,6).map(a =>
+      `<span class="amenity-tag">${amenityEmoji[a] || '✓'} ${esc(a)}</span>`
+    ).join('');
+
+    return `<div class="hotel-card" id="card-${i}">
+      <div class="hotel-img-bg" style="background:${bg}">
+        <span style="font-size:52px;line-height:1">${em}</span>
+        <div class="hotel-badge">${esc(h.category)}</div>
+        <button class="hotel-wishlist${liked?' liked':''}" onclick="toggleWishlist(${i},event)" title="Save">
+          ${liked ? '❤️' : '🤍'}
+        </button>
+      </div>
+      <div class="hotel-body">
+        <div class="hotel-top-row">
+          <div class="hotel-name">${esc(h.name)}</div>
+          <div class="hotel-price-block">
+            <div class="hotel-price">₹${Number(h.price_inr).toLocaleString('en-IN')}</div>
+            <div class="hotel-price-sub">per night</div>
+          </div>
+        </div>
+        <div class="hotel-category">${esc(h.category)}</div>
+        <div class="hotel-rating-row">
+          <span class="stars">${stars}</span>
+          <span class="rating-num">${Number(h.rating).toFixed(1)}</span>
+          <span class="review-cnt">(${Number(h.reviews).toLocaleString('en-IN')} reviews)</span>
+          ${openHtml}
+        </div>
+        <div class="hotel-address">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          ${esc(h.address)}
+        </div>
+        <div class="hotel-desc">${esc(h.description || '')}</div>
+        <div class="amenities">${amenityHtml}</div>
+        <div class="hotel-footer">
+          <button class="view-btn" onclick="showToast('Opening ${esc(h.name)}…')">View details</button>
+          <button class="book-btn" onclick="showToast('Booking ${esc(h.name)} — redirecting…')">Book now</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function setFilter(val, el) {
+  activeFilter = val;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderAll();
+}
+
+function sortResults(val) {
+  currentSort = val;
+  renderAll();
+}
+
+function toggleWishlist(i, e) {
+  e.stopPropagation();
+  if (wishlist.has(i)) {
+    wishlist.delete(i);
+    showToast('Removed from wishlist');
+  } else {
+    wishlist.add(i);
+    showToast('Added to wishlist ❤️');
+  }
+  const btn = document.querySelector(`#card-${i} .hotel-wishlist`);
+  if (btn) {
+    btn.classList.toggle('liked', wishlist.has(i));
+    btn.textContent = wishlist.has(i) ? '❤️' : '🤍';
+  }
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>

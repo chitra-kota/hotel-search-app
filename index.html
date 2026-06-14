@@ -34,32 +34,6 @@ body { font-family: 'Inter', sans-serif; background: #f4f6f9; color: #1a1d23; mi
 }
 .nav-cta:hover { background: #1d4ed8 !important; }
 
-/* API Key Banner */
-.api-banner {
-  background: #fffbeb; border-bottom: 1px solid #fde68a;
-  padding: 10px 32px; display: flex; align-items: center;
-  gap: 12px; flex-wrap: wrap;
-}
-.api-banner-text { font-size: 13px; color: #92400e; flex: 1; min-width: 200px; }
-.api-banner-text strong { color: #78350f; }
-.api-input-wrap { display: flex; gap: 8px; align-items: center; flex: 2; min-width: 280px; }
-.api-input {
-  flex: 1; padding: 8px 12px; border: 1px solid #fcd34d;
-  border-radius: 8px; font-size: 13px; font-family: 'Inter', sans-serif;
-  background: #fff; outline: none; color: #1a1d23;
-}
-.api-input:focus { border-color: #f59e0b; box-shadow: 0 0 0 3px rgba(245,158,11,.15); }
-.api-save-btn {
-  padding: 8px 16px; background: #f59e0b; color: #fff;
-  border: none; border-radius: 8px; font-size: 13px; font-weight: 500;
-  font-family: 'Inter', sans-serif; cursor: pointer; white-space: nowrap;
-  transition: background .15s;
-}
-.api-save-btn:hover { background: #d97706; }
-.api-saved { display: none; align-items: center; gap: 6px; font-size: 13px; color: #15803d; font-weight: 500; }
-.api-saved.show { display: flex; }
-.api-help { font-size: 11px; color: #b45309; }
-.api-help a { color: #b45309; }
 
 /* Hero */
 .hero {
@@ -243,7 +217,6 @@ body { font-family: 'Inter', sans-serif; background: #f4f6f9; color: #1a1d23; mi
   .hero h1{font-size:32px}
   .main{padding:20px 14px}
   .hotels-grid{grid-template-columns:1fr}
-  .api-banner{padding:10px 16px}
 }
 </style>
 </head>
@@ -262,19 +235,6 @@ body { font-family: 'Inter', sans-serif; background: #f4f6f9; color: #1a1d23; mi
     <a href="#" class="nav-cta">Sign in</a>
   </div>
 </nav>
-
-<!-- API Key Banner -->
-<div class="api-banner" id="api-banner">
-  <div class="api-banner-text">
-    <strong>🔑 Enter your Anthropic API key</strong> to enable hotel search.
-    <div class="api-help">Get a free key at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> → API Keys</div>
-  </div>
-  <div class="api-input-wrap">
-    <input class="api-input" id="api-key-input" type="password" placeholder="sk-ant-api03-..." />
-    <button class="api-save-btn" onclick="saveApiKey()">Save key</button>
-  </div>
-  <div class="api-saved" id="api-saved">✅ Key saved — ready to search!</div>
-</div>
 
 <!-- Hero -->
 <section class="hero">
@@ -337,24 +297,6 @@ body { font-family: 'Inter', sans-serif; background: #f4f6f9; color: #1a1d23; mi
 
 <script>
 let allHotels = [], activeFilter = 'all', currentSort = 'default', currentLocation = '', wishlist = new Set();
-let apiKey = localStorage.getItem('sf_api_key') || '';
-
-// Restore saved key on load
-window.addEventListener('DOMContentLoaded', () => {
-  if (apiKey) {
-    document.getElementById('api-key-input').value = apiKey;
-    document.getElementById('api-saved').classList.add('show');
-  }
-});
-
-function saveApiKey() {
-  const val = document.getElementById('api-key-input').value.trim();
-  if (!val || !val.startsWith('sk-')) { showToast('Please enter a valid API key (starts with sk-)'); return; }
-  apiKey = val;
-  localStorage.setItem('sf_api_key', apiKey);
-  document.getElementById('api-saved').classList.add('show');
-  showToast('API key saved! You can now search hotels.');
-}
 
 const amenityEmoji = {
   'WiFi':'📶','Pool':'🏊','Spa':'💆','Gym':'💪','Restaurant':'🍽','Bar':'🍸',
@@ -382,12 +324,6 @@ function quickSearch(place) {
 }
 
 async function runSearch(location) {
-  if (!apiKey) {
-    showToast('Please enter your Anthropic API key first ↑');
-    document.getElementById('api-key-input').focus();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    return;
-  }
   currentLocation = location; activeFilter = 'all'; currentSort = 'default';
   document.querySelectorAll('.filter-chip').forEach((c,i) => c.classList.toggle('active', i === 0));
 
@@ -413,52 +349,25 @@ async function runSearch(location) {
   document.getElementById('main-area').scrollIntoView({ behavior: 'smooth', block: 'start' });
 
   try {
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    const resp = await fetch('/api/hotels', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 1000,
-        system: `You are a hotel data API. Return ONLY valid JSON — no markdown, no backticks, no explanation.
-Return exactly: { "hotels": [ ... ] }
-Each hotel must have:
-- name (string)
-- category (one of: "5-star luxury","4-star hotel","3-star hotel","budget hotel","resort","boutique hotel","heritage hotel","business hotel")
-- rating (number 3.0-5.0)
-- reviews (integer 80-4000)
-- price_inr (integer: budget=800-2500, mid=2500-6000, luxury=6000-25000)
-- address (realistic address in that city)
-- open_now (true or false)
-- amenities (array of 4-7: WiFi,Pool,Spa,Gym,Restaurant,Bar,Parking,AC,Room Service,Airport Shuttle,Pet Friendly,Beach Access,Conference Room,Rooftop,Breakfast,Laundry)
-- description (one specific sentence about the hotel)
-Return 8 varied hotels.`,
-        messages: [{ role: 'user', content: 'Hotels in ' + location }]
-      })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ location })
     });
 
     if (!resp.ok) {
-      const err = await resp.json();
-      throw new Error(err.error?.message || 'API error ' + resp.status);
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.error || 'API error ' + resp.status);
     }
 
-    const data = await resp.json();
-    const raw = data.content?.filter(b => b.type === 'text').map(b => b.text).join('') || '';
-    const clean = raw.replace(/```json|```/g, '').trim();
-    const parsed = JSON.parse(clean);
+    const parsed = await resp.json();
     allHotels = parsed.hotels || [];
     renderAll();
   } catch (e) {
-    const isAuthErr = e.message && (e.message.includes('401') || e.message.includes('auth') || e.message.includes('API key'));
     grid.innerHTML = `<div class="state-box">
-      <div class="state-icon">${isAuthErr ? '🔑' : '⚠️'}</div>
-      <div class="state-title">${isAuthErr ? 'Invalid API key' : 'Something went wrong'}</div>
-      <div class="state-sub">${isAuthErr ? 'Your API key seems incorrect. Please check and update it at the top of the page.' : 'Could not load hotels. Check your API key and try again.<br><small style="color:#9ca3af">' + e.message + '</small>'}</div>
-      <button class="state-action" onclick="window.scrollTo({top:0,behavior:'smooth'})">Update API key ↑</button>
+      <div class="state-icon">⚠️</div>
+      <div class="state-title">Something went wrong</div>
+      <div class="state-sub">Could not load hotels. Please try again.<br><small style="color:#9ca3af">${esc(e.message)}</small></div>
     </div>`;
     document.getElementById('results-meta').style.display = 'none';
   } finally {
